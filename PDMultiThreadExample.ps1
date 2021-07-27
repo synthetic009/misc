@@ -5,38 +5,30 @@
 
 function Write-Log 
 {
-    [CmdletBinding()]
     Param
     (
-        [Parameter(Mandatory=$true,ValueFromPipelineByPropertyName=$true)]
-        [ValidateNotNullOrEmpty()]
-        [Alias("LogContent")]
-        [string]$Message,
-
-        # Replace
-        [Alias('LogPath')]
-        [string]$Path="C:\PD\Data\log\"+"PDMultiThreadExample.log",
-        [ValidateSet("Error","Warn","Info")]
-        [string]$Level="Info",
+        [Parameter(Mandatory=$true)][ValidateNotNullOrEmpty()][string]$Message,
+        # Replace this log location if desired
+        [Parameter(Mandatory=$false)][string]$Path="C:\PD\Data\log\"+"PDMultiThreadExample.log",
+        [Parameter(Mandatory=$false)][ValidateSet("Error","Warn","Info")][string]$Level="Info",
         [switch]$NoClobber
     )
 
     BEGIN 
     {
         $VerbosePreference = 'Continue'
-    }
-    PROCESS 
-    { 
         If ((Test-Path $Path) -AND $NoClobber) 
         {
             Write-Error "Log file $Path already exists, and you specified NoClobber. Either delete the file or specify a different name." -ErrorAction Stop
         }
         ElseIf (!(Test-Path $Path)) 
         {
-            Write-Verbose "Creating $Path."
+            Write-Verbose "Creating $($Path) : [$($Path)]"
             New-Item $Path -Force -ItemType File | Out-Null
         }
-
+    }
+    PROCESS 
+    { 
         $FormattedDate = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
         $outputMessage = ""
 
@@ -281,7 +273,6 @@ function Resolve-ThreadManager
         try
         {
             # demo, see below commented out code
-            #[array]$tempThreadManager = @();
             for ($i=0;$i -lt $ThreadManager.Count; $i++)
             {
                 if ($ThreadManager[$i].IsMarkedComplete)
@@ -370,8 +361,15 @@ function Invoke-MultiExecute
         [int]$stopCount = 30;
         [int]$sleepTime = 1;
 
-        #change this to your OS!
-        $CPUCapacity = Read-CPUCapacity -OperatingSystem "Windows"
+        if ($IsLinux)
+        {
+            $CPUCapacity = Read-CPUCapacity -OperatingSystem "Linux"
+        }
+        else 
+        {
+            $CPUCapacity = Read-CPUCapacity -OperatingSystem "Windows"    
+        }
+
         ### OVERWRITE MAX THREADS HERE OR USE ABOVE FUNCTION
         #$CPUCapacity = 20;
         if (!$CPUCapacity)
@@ -492,7 +490,7 @@ try
 {
     # define some collection of items to work on, typically by calling some function, but can just define it like below:
     $ExampleArray = @();
-    [int]$itemsToGenerate = 500;
+    [int]$itemsToGenerate = 30;
     for ($i=0; $i -lt  $itemsToGenerate; $i++)
     {
         $ExampleArray+=,@("Example$i","Info$i")
